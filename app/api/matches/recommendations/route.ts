@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     // For MVP, return basic recommendations
     // In Phase 2, this will integrate with ML service for intelligent matching
     const recommendations = await Promise.all(
-      potentialMatches.slice(0, 20).map(async (user) => {
+      potentialMatches.slice(0, 50).map(async (user) => {
         const userSkills = await db.select().from(skills)
           .where(eq(skills.userId, user.id));
         

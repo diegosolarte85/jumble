@@ -84,7 +84,13 @@ export default function GraphPage() {
     <div className="graph-page">
       {/* Header */}
       <header className="graph-header">
-        <h1>Jumble</h1>
+        <div className="header-left">
+          <h1>Jumble</h1>
+          <nav className="header-nav">
+            <a href="/graph" className="nav-link active">Matches</a>
+            <a href="/trending" className="nav-link">Trending Ideas</a>
+          </nav>
+        </div>
         <div className="header-info">
           <span className="node-count">
             {graphData.nodes.length - 1} potential matches

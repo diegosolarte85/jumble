@@ -161,8 +161,8 @@ export function useGraphData() {
           const targetUser = toMLUserProfile(me, me.id);
           const candidateUsers = recommendations.map(r => toMLUserProfile(r, r.id));
 
-          // Get ML match scores
-          const mlResponse = await mlClient.getMatches(targetUser, candidateUsers, 50);
+          // Get ML match scores (up to 50 matches)
+          const mlResponse = await mlClient.getMatches(targetUser, candidateUsers, Math.min(candidateUsers.length, 50));
           matchResults = mlResponse.matches;
         } catch (mlError) {
           console.warn('ML service error, using fallback scoring:', mlError);
