@@ -4,6 +4,8 @@ import { db } from '@/lib/db';
 import { skills } from '@/drizzle/schema';
 import { eq, and } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }

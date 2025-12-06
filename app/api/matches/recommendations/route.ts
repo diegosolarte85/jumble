@@ -4,6 +4,8 @@ import { db } from '@/lib/db';
 import { users, swipes, startupIdeas, skills } from '@/drizzle/schema';
 import { eq, notInArray, and, ne } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const session = await auth();
