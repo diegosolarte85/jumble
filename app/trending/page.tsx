@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback } from 'react';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useIdeasGraph, IdeaNode } from '@/app/hooks/useIdeasGraph';
 import { getAvatarUrl } from '@/lib/utils';
@@ -12,6 +14,7 @@ const IdeasGraphCanvas = dynamic(
 );
 
 export default function TrendingPage() {
+  const pathname = usePathname();
   const {
     graphData,
     selectedIdea,
@@ -56,8 +59,15 @@ export default function TrendingPage() {
         <div className="header-left">
           <h1>Jumble</h1>
           <nav className="header-nav">
-            <a href="/graph" className="nav-link">Matches</a>
-            <a href="/trending" className="nav-link active">Trending Ideas</a>
+            <Link href="/graph" className={`nav-link ${pathname === '/graph' ? 'active' : ''}`}>
+              Matches
+            </Link>
+            <Link href="/trending" className={`nav-link ${pathname === '/trending' ? 'active' : ''}`}>
+              Trending Ideas
+            </Link>
+            <Link href="/profile" className={`nav-link ${pathname === '/profile' ? 'active' : ''}`}>
+              Profile
+            </Link>
           </nav>
         </div>
         <div className="header-info">

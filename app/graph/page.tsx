@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useState, useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useGraphData, GraphNode } from '@/app/hooks/useGraphData';
 import { useChat } from '@/app/hooks/useChat';
@@ -13,6 +15,7 @@ const GraphCanvas = dynamic(
 );
 
 export default function GraphPage() {
+  const pathname = usePathname();
   const {
     graphData,
     selectedNode,
@@ -185,8 +188,15 @@ export default function GraphPage() {
         <div className="header-left">
           <h1>Jumble</h1>
           <nav className="header-nav">
-            <a href="/graph" className="nav-link active">Matches</a>
-            <a href="/trending" className="nav-link">Trending Ideas</a>
+            <Link href="/graph" className={`nav-link ${pathname === '/graph' ? 'active' : ''}`}>
+              Matches
+            </Link>
+            <Link href="/trending" className={`nav-link ${pathname === '/trending' ? 'active' : ''}`}>
+              Trending Ideas
+            </Link>
+            <Link href="/profile" className={`nav-link ${pathname === '/profile' ? 'active' : ''}`}>
+              Profile
+            </Link>
           </nav>
         </div>
         <div className="header-info">
