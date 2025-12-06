@@ -265,13 +265,15 @@ export function useGraphData() {
 
       const result = await response.json();
 
-      // Remove the swiped user from the graph
-      setGraphData((prev) => ({
-        nodes: prev.nodes.filter((node) => node.id !== userId),
-        links: prev.links.filter((link) => 
-          link.source !== userId && link.target !== userId
-        ),
-      }));
+      // Only remove from graph if swiped left (hide)
+      if (direction === 'left') {
+        setGraphData((prev) => ({
+          nodes: prev.nodes.filter((node) => node.id !== userId),
+          links: prev.links.filter((link) => 
+            link.source !== userId && link.target !== userId
+          ),
+        }));
+      }
 
       // Clear selection if we swiped on the selected node
       if (selectedNode?.id === userId) {
@@ -283,7 +285,7 @@ export function useGraphData() {
       console.error('Swipe error:', err);
       throw err;
     }
-  }, [selectedNode]);
+  }, [selectedNode, setSelectedNode]);
 
   return {
     graphData,

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useGraphData, GraphNode } from '@/app/hooks/useGraphData';
 import { getAvatarUrl } from '@/lib/utils';
@@ -12,6 +13,7 @@ const GraphCanvas = dynamic(
 );
 
 export default function GraphPage() {
+  const router = useRouter();
   const {
     graphData,
     selectedNode,
@@ -36,12 +38,56 @@ export default function GraphPage() {
   const handleConnect = useCallback(async () => {
     if (selectedNode) {
       try {
+        // Check if match already exists
+        const matchesResponse = await fetch('/api/matches');
+        if (matchesResponse.ok) {
+          const matches = await matchesResponse.json();
+          const existingMatch = matches.find((m: any) => 
+            m.otherUser?.id === selectedNode.id
+          );
+          
+          if (existingMatch) {
+            router.push(`/chat/${existingMatch.id}`);
+            return;
+          }
+        }
+
+        // Record swipe first
         await handleSwipe(selectedNode.id, 'right');
+        
+        // Create match directly (even if not mutual yet) and navigate to chat
+        const matchResponse = await fetch('/api/matches/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: selectedNode.id }),
+        });
+        
+        if (matchResponse.ok) {
+          const matchData = await matchResponse.json();
+          router.push(`/chat/${matchData.id}`);
+        } else {
+          // Try to find existing match (might have been created by swipe)
+          const matchesResponse2 = await fetch('/api/matches');
+          if (matchesResponse2.ok) {
+            const matches = await matchesResponse2.json();
+            const existingMatch = matches.find((m: any) => 
+              m.otherUser?.id === selectedNode.id
+            );
+            if (existingMatch) {
+              router.push(`/chat/${existingMatch.id}`);
+            } else {
+              throw new Error('Failed to create match');
+            }
+          } else {
+            throw new Error('Failed to create match');
+          }
+        }
       } catch (err) {
         console.error('Failed to connect:', err);
+        alert('Failed to connect. Please try again.');
       }
     }
-  }, [selectedNode, handleSwipe]);
+  }, [selectedNode, handleSwipe, router]);
 
   const handleHide = useCallback(async () => {
     if (selectedNode) {

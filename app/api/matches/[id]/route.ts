@@ -42,14 +42,16 @@ export async function GET(
       .where(eq(users.id, otherUserId))
       .limit(1);
 
+    const otherUserData = otherUser[0];
     return NextResponse.json({
       ...match[0],
-      otherUser: otherUser[0] ? {
-        id: otherUser[0].id,
-        name: otherUser[0].name,
-        bio: otherUser[0].bio,
-        location: otherUser[0].location,
-        commitmentLevel: otherUser[0].commitmentLevel,
+      otherUser: otherUserData ? {
+        id: otherUserData.id,
+        name: otherUserData.name,
+        bio: otherUserData.bio,
+        location: otherUserData.location,
+        profilePicture: otherUserData.profilePicture || null,
+        commitmentLevel: otherUserData.commitmentLevel,
       } : null,
     });
   } catch (error) {
