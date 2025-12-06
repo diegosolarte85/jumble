@@ -1,0 +1,15 @@
+# Files to exclude from Heroku slug (reduces build size)
+*.md
+!README.md
+!HEROKU_DEPLOYMENT.md
+tests/
+.git/
+.github/
+*.test.ts
+*.test.js
+.eslintrc.json
+jumble.db
+jumble.db-shm
+jumble.db-wal
+*.log
+.DS_Store
