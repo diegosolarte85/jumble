@@ -458,3 +458,158 @@ body {
 .empty-state p {
   color: var(--text-secondary);
 }
+
+/* ===== ML Badge ===== */
+.ml-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+  color: var(--bg-primary);
+  border-radius: var(--radius-sm);
+  margin-left: 8px;
+}
+
+/* ===== Match Metrics ===== */
+.match-metrics {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.metric-row {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 12px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.metric-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.metric-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+}
+
+.match-bar-container {
+  height: 6px;
+  background: var(--bg-card);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.match-bar {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.5s ease;
+}
+
+/* ===== Match Reasons ===== */
+.match-reasons {
+  background: rgba(0, 255, 255, 0.05);
+  border: 1px solid rgba(0, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.characteristics-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.characteristic {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding: 6px 0;
+  line-height: 1.4;
+}
+
+.characteristic:not(:last-child) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.char-icon {
+  color: var(--accent-cyan);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ===== Match Details Breakdown ===== */
+.match-details {
+  margin-bottom: 20px;
+}
+
+.detail-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.detail-header span:first-child {
+  color: var(--text-secondary);
+}
+
+.detail-header span:last-child {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.detail-bar-bg {
+  height: 8px;
+  background: var(--bg-card);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.detail-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+  border-radius: var(--radius-full);
+  transition: width 0.5s ease;
+}
+
+.role-badge {
+  font-size: 13px;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  margin-top: 4px;
+}
+
+.role-badge strong {
+  color: var(--accent-purple);
+  text-transform: capitalize;
+}

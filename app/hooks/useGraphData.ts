@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { mlClient, MatchResult, UserProfile } from '@/lib/ml-client';
 
 export interface Skill {
   skillName: string;
@@ -36,6 +37,17 @@ export interface GraphNode {
   // Visual properties
   nodeSize: number;
   color: string;
+  // ML match properties (only for non-current user nodes)
+  matchScore?: number;
+  connectionStrength?: number;
+  successProbability?: number;
+  matchCharacteristics?: string[];
+  explanation?: {
+    ideaSimilarity: number;
+    skillComplementarity: number;
+    roleCompatibility: number;
+    userRole: string | null;
+  };
   // Position properties (added by react-force-graph)
   x?: number;
   y?: number;
@@ -63,28 +75,34 @@ interface CurrentUser {
   ideas: Idea[];
 }
 
-// Color palette for nodes
-const NODE_COLORS = {
-  currentUser: '#00ffff', // Cyan for current user
-  highSkills: '#ff00ff',  // Magenta for users with many skills
-  mediumSkills: '#8b5cf6', // Purple
-  lowSkills: '#3b82f6',   // Blue
-};
-
-function getNodeColor(skillCount: number, isCurrentUser: boolean): string {
-  if (isCurrentUser) return NODE_COLORS.currentUser;
-  if (skillCount >= 5) return NODE_COLORS.highSkills;
-  if (skillCount >= 3) return NODE_COLORS.mediumSkills;
-  return NODE_COLORS.lowSkills;
+// Color palette based on match score
+function getNodeColorByScore(matchScore: number): string {
+  if (matchScore >= 0.7) return '#ff00ff';  // Magenta - excellent match
+  if (matchScore >= 0.5) return '#8b5cf6';  // Purple - good match
+  if (matchScore >= 0.3) return '#3b82f6';  // Blue - moderate match
+  return '#64748b';                          // Gray - low match
 }
 
-function calculateLinkStrength(user: UserRecommendation): number {
-  // Simple strength calculation based on profile completeness
-  let score = 0;
-  if (user.bio) score += 20;
-  if (user.skills.length > 0) score += Math.min(user.skills.length * 10, 40);
-  if (user.ideas.length > 0) score += Math.min(user.ideas.length * 20, 40);
-  return Math.min(score, 100) / 100;
+const CURRENT_USER_COLOR = '#00ffff'; // Cyan
+
+// Convert API user to ML service UserProfile format
+function toMLUserProfile(user: UserRecommendation | CurrentUser, userId: string): UserProfile {
+  // Combine all ideas into one description
+  const ideaText = 'ideas' in user && user.ideas.length > 0
+    ? user.ideas.map(i => `${i.title}: ${i.description}`).join('. ')
+    : 'Looking for startup opportunities';
+
+  // Get skill names
+  const skillNames = user.skills.map(s => s.skillName);
+
+  return {
+    user_id: userId,
+    idea: ideaText,
+    skills: skillNames.length > 0 ? skillNames : ['General'],
+    bio: user.bio || undefined,
+    location: 'location' in user ? user.location || undefined : undefined,
+    commitment_level: user.commitmentLevel || undefined,
+  };
 }
 
 export function useGraphData() {
@@ -93,6 +111,7 @@ export function useGraphData() {
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mlServiceAvailable, setMlServiceAvailable] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -123,6 +142,30 @@ export function useGraphData() {
 
       setCurrentUser(me);
 
+      // Check if ML service is available
+      const mlAvailable = await mlClient.healthCheck();
+      setMlServiceAvailable(mlAvailable);
+
+      let matchResults: MatchResult[] = [];
+
+      if (mlAvailable && recommendations.length > 0) {
+        try {
+          // Prepare data for ML service
+          const targetUser = toMLUserProfile(me, me.id);
+          const candidateUsers = recommendations.map(r => toMLUserProfile(r, r.id));
+
+          // Get ML match scores
+          const mlResponse = await mlClient.getMatches(targetUser, candidateUsers, 50);
+          matchResults = mlResponse.matches;
+        } catch (mlError) {
+          console.warn('ML service error, using fallback scoring:', mlError);
+        }
+      }
+
+      // Create a map of match results by user ID for quick lookup
+      const matchMap = new Map<string, MatchResult>();
+      matchResults.forEach(m => matchMap.set(m.user_id, m));
+
       // Transform to graph data
       const nodes: GraphNode[] = [
         // Current user node (centered, larger)
@@ -134,29 +177,58 @@ export function useGraphData() {
           skills: me.skills || [],
           ideas: me.ideas || [],
           commitmentLevel: me.commitmentLevel,
-          nodeSize: 16,
-          color: NODE_COLORS.currentUser,
+          nodeSize: 18,
+          color: CURRENT_USER_COLOR,
         },
-        // Recommendation nodes
-        ...recommendations.map((user) => ({
-          id: user.id,
-          name: user.name || 'Anonymous',
-          bio: user.bio,
-          isCurrentUser: false,
-          skills: user.skills,
-          ideas: user.ideas,
-          commitmentLevel: user.commitmentLevel,
-          nodeSize: 10,
-          color: getNodeColor(user.skills.length, false),
-        })),
+        // Recommendation nodes with ML scores
+        ...recommendations.map((user) => {
+          const mlMatch = matchMap.get(user.id);
+          const matchScore = mlMatch?.match_score ?? 0.3; // Default score if no ML
+
+          return {
+            id: user.id,
+            name: user.name || 'Anonymous',
+            bio: user.bio,
+            isCurrentUser: false,
+            skills: user.skills,
+            ideas: user.ideas,
+            commitmentLevel: user.commitmentLevel,
+            // Size based on match score (8-14px range)
+            nodeSize: 8 + matchScore * 6,
+            color: getNodeColorByScore(matchScore),
+            // ML properties
+            matchScore: mlMatch?.match_score,
+            connectionStrength: mlMatch?.connection_strength,
+            successProbability: mlMatch?.success_probability,
+            matchCharacteristics: mlMatch?.match_characteristics,
+            explanation: mlMatch ? {
+              ideaSimilarity: mlMatch.explanation.idea_similarity,
+              skillComplementarity: mlMatch.explanation.skill_complementarity,
+              roleCompatibility: mlMatch.explanation.role_compatibility,
+              userRole: mlMatch.explanation.user2_role,
+            } : undefined,
+          };
+        }),
       ];
 
       // Create links from current user to all recommendations
-      const links: GraphLink[] = recommendations.map((user) => ({
-        source: me.id,
-        target: user.id,
-        strength: calculateLinkStrength(user),
-      }));
+      // Link strength based on match score
+      const links: GraphLink[] = recommendations.map((user) => {
+        const mlMatch = matchMap.get(user.id);
+        const strength = mlMatch?.match_score ?? 0.3;
+        return {
+          source: me.id,
+          target: user.id,
+          strength,
+        };
+      });
+
+      // Sort nodes by match score (highest first, after current user)
+      nodes.sort((a, b) => {
+        if (a.isCurrentUser) return -1;
+        if (b.isCurrentUser) return 1;
+        return (b.matchScore ?? 0) - (a.matchScore ?? 0);
+      });
 
       setGraphData({ nodes, links });
     } catch (err) {
@@ -213,6 +285,6 @@ export function useGraphData() {
     error,
     refetch: fetchData,
     handleSwipe,
+    mlServiceAvailable,
   };
 }
-

@@ -13,12 +13,12 @@ const GraphCanvas = dynamic(
 export default function GraphPage() {
   const {
     graphData,
-    currentUser,
     selectedNode,
     setSelectedNode,
     loading,
     error,
     handleSwipe,
+    mlServiceAvailable,
   } = useGraphData();
 
   const handleNodeClick = useCallback(
@@ -88,6 +88,9 @@ export default function GraphPage() {
           <span className="node-count">
             {graphData.nodes.length - 1} potential matches
           </span>
+          {mlServiceAvailable && (
+            <span className="ml-badge">ML</span>
+          )}
         </div>
       </header>
 
@@ -119,6 +122,112 @@ export default function GraphPage() {
               </span>
             )}
           </div>
+
+          {/* Match Metrics */}
+          {selectedNode.matchScore !== undefined && (
+            <div className="match-metrics">
+              <div className="metric-row">
+                <div className="metric">
+                  <span className="metric-value">
+                    {Math.round(selectedNode.matchScore * 100)}%
+                  </span>
+                  <span className="metric-label">Match</span>
+                </div>
+                {selectedNode.connectionStrength !== undefined && (
+                  <div className="metric">
+                    <span className="metric-value">
+                      {Math.round(selectedNode.connectionStrength)}
+                    </span>
+                    <span className="metric-label">Connection</span>
+                  </div>
+                )}
+                {selectedNode.successProbability !== undefined && (
+                  <div className="metric">
+                    <span className="metric-value">
+                      {Math.round(selectedNode.successProbability * 100)}%
+                    </span>
+                    <span className="metric-label">Success</span>
+                  </div>
+                )}
+              </div>
+              
+              {/* Progress bar for match score */}
+              <div className="match-bar-container">
+                <div 
+                  className="match-bar" 
+                  style={{ 
+                    width: `${selectedNode.matchScore * 100}%`,
+                    backgroundColor: selectedNode.color 
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Why This Match */}
+          {selectedNode.matchCharacteristics && selectedNode.matchCharacteristics.length > 0 && (
+            <div className="panel-section match-reasons">
+              <h3>Why This Match</h3>
+              <ul className="characteristics-list">
+                {selectedNode.matchCharacteristics.map((char, idx) => (
+                  <li key={idx} className="characteristic">
+                    <span className="char-icon">✓</span>
+                    {char}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Match Details */}
+          {selectedNode.explanation && (
+            <div className="panel-section match-details">
+              <h3>Match Breakdown</h3>
+              <div className="detail-bars">
+                <div className="detail-item">
+                  <div className="detail-header">
+                    <span>Idea Alignment</span>
+                    <span>{Math.round(selectedNode.explanation.ideaSimilarity * 100)}%</span>
+                  </div>
+                  <div className="detail-bar-bg">
+                    <div 
+                      className="detail-bar" 
+                      style={{ width: `${selectedNode.explanation.ideaSimilarity * 100}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="detail-item">
+                  <div className="detail-header">
+                    <span>Skill Fit</span>
+                    <span>{Math.round(selectedNode.explanation.skillComplementarity * 100)}%</span>
+                  </div>
+                  <div className="detail-bar-bg">
+                    <div 
+                      className="detail-bar" 
+                      style={{ width: `${selectedNode.explanation.skillComplementarity * 100}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="detail-item">
+                  <div className="detail-header">
+                    <span>Role Compatibility</span>
+                    <span>{Math.round(selectedNode.explanation.roleCompatibility * 100)}%</span>
+                  </div>
+                  <div className="detail-bar-bg">
+                    <div 
+                      className="detail-bar" 
+                      style={{ width: `${selectedNode.explanation.roleCompatibility * 100}%` }}
+                    />
+                  </div>
+                </div>
+                {selectedNode.explanation.userRole && (
+                  <div className="role-badge">
+                    Role: <strong>{selectedNode.explanation.userRole}</strong>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {selectedNode.bio && (
             <p className="panel-bio">{selectedNode.bio}</p>
@@ -184,4 +293,3 @@ export default function GraphPage() {
     </div>
   );
 }
-
