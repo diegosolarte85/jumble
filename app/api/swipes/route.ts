@@ -6,6 +6,8 @@ import { eq, and, or } from 'drizzle-orm';
 import { generateId } from '@/lib/utils';
 import { generateIntroMessage } from '@/lib/intro-message';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();

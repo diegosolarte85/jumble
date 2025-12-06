@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { skills } from '@/drizzle/schema';
 
+export const dynamic = 'force-dynamic';
+
 // Skill taxonomy seed data
 const SKILL_TAXONOMY = [
   { category: 'Technical', skills: ['Frontend Development', 'Backend Development', 'Full Stack Development', 'Mobile Development', 'DevOps', 'Cloud Architecture', 'Database Design', 'API Development', 'Machine Learning', 'Data Science', 'Cybersecurity', 'Blockchain'] },

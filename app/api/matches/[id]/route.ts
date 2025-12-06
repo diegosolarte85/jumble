@@ -4,6 +4,8 @@ import { db } from '@/lib/db';
 import { matches, users } from '@/drizzle/schema';
 import { eq, or, and } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }

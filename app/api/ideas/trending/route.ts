@@ -3,6 +3,8 @@ import { db } from '@/lib/db';
 import { startupIdeas, users } from '@/drizzle/schema';
 import { desc, eq } from 'drizzle-orm';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     // Get trending ideas (most recent)

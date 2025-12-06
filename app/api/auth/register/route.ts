@@ -6,6 +6,8 @@ import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
 import { sanitizeString, sanitizeEmail } from '@/lib/sanitize';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

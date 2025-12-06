@@ -3,6 +3,8 @@ import { db } from '@/lib/db';
 import { sql } from 'drizzle-orm';
 import { users } from '@/drizzle/schema';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     // Simple health check - try to query the database

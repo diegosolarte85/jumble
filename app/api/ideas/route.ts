@@ -5,6 +5,8 @@ import { startupIdeas } from '@/drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { generateId } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const session = await auth();
