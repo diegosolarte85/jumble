@@ -1,81 +1,155 @@
-# jumble
-Connecting business ideas and creators together
+# Jumble - Co-founder Matching Platform
 
-A Bumble-style matching platform that connects startup creators based on complementary skills and aligned business ideas using ML-powered recommendations.
+Connecting business ideas and creators together.
+
+## Backend Setup
+
+### Prerequisites
+
+- Node.js 18+ and npm/pnpm
+- SQLite3 (usually included with Node.js)
+- Python 3.10+ with pip (for ML service)
+
+### Installation
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Set up environment variables:
+
+```bash
+cp env.example .env.local
+# Edit .env.local with your configuration
+```
+
+3. Generate database migrations:
+
+```bash
+npm run db:generate
+```
+
+4. Run migrations:
+
+```bash
+npm run db:push
+```
+
+5. (Optional) Seed the database with test data:
+
+```bash
+npx tsx scripts/seed.ts
+```
+
+### Running the Development Server
+
+1. Start the Next.js backend:
+
+```bash
+npm run dev
+```
+
+2. (Optional) Start the Python ML service:
+
+```bash
+cd python-ml-service
+pip install -r requirements.txt
+python main.py
+```
+
+The backend API will be available at `http://localhost:3000`
+
+## API Endpoints
+
+### Authentication
+
+- `POST /api/auth/register` - Register a new user
+- `GET/POST /api/auth/[...nextauth]` - NextAuth.js endpoints
+
+### Users
+
+- `GET /api/users/me` - Get current user profile
+- `PUT /api/users/me` - Update current user profile
+- `GET /api/users/[id]` - Get public user profile
+- `POST /api/users/me/skills` - Add user skill
+- `GET /api/users/me/skills` - Get user skills
+- `DELETE /api/users/me/skills/[id]` - Remove user skill
+
+### Skills
+
+- `GET /api/skills` - List available skills (with optional category/search filters)
+- `GET /api/skills/categories` - Get skill categories
+
+### Startup Ideas
+
+- `POST /api/ideas` - Create new startup idea
+- `GET /api/ideas` - Get current user's ideas
+- `GET /api/ideas/me` - Get current user's ideas
+- `GET /api/ideas/[id]` - Get idea details
+- `PUT /api/ideas/[id]` - Update startup idea
+- `DELETE /api/ideas/[id]` - Delete startup idea
+
+### Swipes & Matches
+
+- `POST /api/swipes` - Record swipe action
+- `GET /api/swipes` - Get swipe history
+- `GET /api/matches` - Get all matches
+- `GET /api/matches/[id]` - Get match details
+- `DELETE /api/matches/[id]` - Unmatch users
+- `GET /api/matches/recommendations` - Get match recommendations
+
+### Messages
+
+- `GET /api/matches/[id]/messages` - Get messages for a match
+- `POST /api/matches/[id]/messages` - Send a message
+- `GET /api/matches/[id]/messages/unread` - Get unread count
+- `PUT /api/matches/[id]/messages/read` - Mark messages as read
+
+### Health
+
+- `GET /api/health` - Health check endpoint
+
+## Database Schema
+
+The database uses SQLite with the following main tables:
+
+- `users` - User profiles
+- `skills` - User skills with proficiency levels
+- `startup_ideas` - Startup idea descriptions
+- `swipes` - User swipe actions
+- `matches` - Mutual matches between users
+- `messages` - Chat messages
+
+## ML Service
+
+The Python ML service provides:
+
+- `/embed/idea` - Generate embeddings for startup ideas
+- `/embed/skills` - Generate embeddings for skills
+- `/match/recommend` - Get ML-powered match recommendations
+
+## Development
+
+- Database migrations: `npm run db:generate` and `npm run db:push`
+- Database studio: `npm run db:studio`
+- Linting: `npm run lint`
 
 ## Project Structure
 
 ```
 jumble/
-├── ml_service/          # ML matching algorithm service (all code here)
-│   ├── matching_algorithm.py  # Advanced matching (sentence-transformers)
-│   ├── simple_matching.py     # Simple local matching (TF-IDF, recommended)
-│   ├── api.py                 # FastAPI service endpoints
-│   ├── example_usage.py       # Example usage script
-│   ├── test_simple_matching.py # Test script for simple matching
-│   ├── test_ml_service.py     # Test script for advanced matching
-│   ├── run_ml_service.py      # Script to run API server
-│   ├── TEST_RESULTS.md        # Test results documentation
-│   └── README.md              # ML service documentation
-├── RFC.md               # Project requirements and specifications
-└── requirements.txt     # Python dependencies
+├── app/                    # Next.js App Router
+│   ├── api/               # API routes
+│   └── ...
+├── drizzle/               # Database schema and migrations
+├── lib/                   # Shared utilities
+│   ├── auth.ts           # NextAuth configuration
+│   ├── db.ts             # Database connection
+│   ├── ml-client.ts      # ML service client
+│   └── utils.ts          # Utility functions
+├── python-ml-service/     # Python FastAPI ML service
+├── scripts/               # Utility scripts
+└── ...
 ```
-
-## ML Matching Service
-
-The ML matching service implements the core algorithm for matching co-founders based on:
-- **Idea Alignment**: Semantic similarity between startup ideas (0.6-0.9 range)
-- **Skill Complementarity**: How well users fill each other's skill gaps
-- **Skill Overlap**: Encourages diverse, non-overlapping skills
-- **Role Compatibility**: Matches complementary roles (technical + business, etc.)
-
-### Quick Start
-
-1. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Test the simple matching algorithm:**
-   ```bash
-   cd ml_service
-   python test_simple_matching.py
-   ```
-
-3. **Run example:**
-   ```bash
-   cd ml_service
-   python example_usage.py
-   ```
-
-4. **Start API server:**
-   ```bash
-   cd ml_service
-   python run_ml_service.py
-   ```
-   Or with uvicorn:
-   ```bash
-   cd ml_service
-   uvicorn api:app --reload
-   ```
-
-See [ml_service/README.md](ml_service/README.md) for detailed documentation.
-
-## Development Status
-
-### Phase 1: Core MVP (In Progress)
-- [x] ML matching algorithm implementation
-- [ ] Next.js project setup
-- [ ] Database schema
-- [ ] User authentication
-- [ ] Profile creation UI
-- [ ] Swipeable card interface
-
-### Phase 2: ML Matching (Completed)
-- [x] Python ML service with sentence transformers
-- [x] Idea embedding pipeline
-- [x] Skill embedding and comparison
-- [x] Matching algorithm with scoring system
-- [x] API endpoints for match recommendations
-
-See [RFC.md](RFC.md) for full project specifications.
