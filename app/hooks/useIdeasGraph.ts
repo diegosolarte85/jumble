@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { mlClient } from '@/lib/ml-client';
 
 export interface IdeaNode {
   id: string;

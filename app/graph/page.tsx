@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useGraphData, GraphNode } from '@/app/hooks/useGraphData';
+import { useChat } from '@/app/hooks/useChat';
 import { getAvatarUrl } from '@/lib/utils';
 
 // Dynamic import to avoid SSR issues with canvas
@@ -13,7 +13,6 @@ const GraphCanvas = dynamic(
 );
 
 export default function GraphPage() {
-  const router = useRouter();
   const {
     graphData,
     selectedNode,
@@ -23,6 +22,28 @@ export default function GraphPage() {
     handleSwipe,
     mlServiceAvailable,
   } = useGraphData();
+  
+  const [chatMode, setChatMode] = useState(false);
+  const [matchId, setMatchId] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const { match, messages, loading: chatLoading, sending, sendMessage } = useChat(matchId);
+  const [messageInput, setMessageInput] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Get current user ID
+  useEffect(() => {
+    fetch('/api/users/me')
+      .then(res => res.json())
+      .then(data => setCurrentUserId(data.id))
+      .catch(() => {});
+  }, []);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    if (chatMode) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, chatMode]);
 
   const handleNodeClick = useCallback(
     (node: GraphNode) => {
@@ -47,7 +68,8 @@ export default function GraphPage() {
           );
           
           if (existingMatch) {
-            router.push(`/chat/${existingMatch.id}`);
+            setMatchId(existingMatch.id);
+            setChatMode(true);
             return;
           }
         }
@@ -55,7 +77,7 @@ export default function GraphPage() {
         // Record swipe first
         await handleSwipe(selectedNode.id, 'right');
         
-        // Create match directly (even if not mutual yet) and navigate to chat
+        // Create match directly (even if not mutual yet)
         const matchResponse = await fetch('/api/matches/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -64,7 +86,8 @@ export default function GraphPage() {
         
         if (matchResponse.ok) {
           const matchData = await matchResponse.json();
-          router.push(`/chat/${matchData.id}`);
+          setMatchId(matchData.id);
+          setChatMode(true);
         } else {
           // Try to find existing match (might have been created by swipe)
           const matchesResponse2 = await fetch('/api/matches');
@@ -74,7 +97,8 @@ export default function GraphPage() {
               m.otherUser?.id === selectedNode.id
             );
             if (existingMatch) {
-              router.push(`/chat/${existingMatch.id}`);
+              setMatchId(existingMatch.id);
+              setChatMode(true);
             } else {
               throw new Error('Failed to create match');
             }
@@ -87,7 +111,7 @@ export default function GraphPage() {
         alert('Failed to connect. Please try again.');
       }
     }
-  }, [selectedNode, handleSwipe, router]);
+  }, [selectedNode, handleSwipe]);
 
   const handleHide = useCallback(async () => {
     if (selectedNode) {
@@ -101,7 +125,35 @@ export default function GraphPage() {
 
   const handleClosePanel = useCallback(() => {
     setSelectedNode(null);
+    setChatMode(false);
+    setMatchId(null);
+    setMessageInput('');
   }, [setSelectedNode]);
+
+  const handleBackToProfile = useCallback(() => {
+    setChatMode(false);
+  }, []);
+
+  const handleSendMessage = useCallback(async () => {
+    if (!messageInput.trim() || sending || !matchId) return;
+
+    const content = messageInput;
+    setMessageInput('');
+    
+    try {
+      await sendMessage(content);
+    } catch (err) {
+      console.error('Failed to send message:', err);
+      setMessageInput(content); // Restore message on error
+    }
+  }, [messageInput, sending, matchId, sendMessage]);
+
+  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  }, [handleSendMessage]);
 
   if (loading) {
     return (
@@ -154,14 +206,110 @@ export default function GraphPage() {
         selectedNodeId={selectedNode?.id ?? null}
       />
 
-      {/* Profile Panel */}
+      {/* Profile Panel / Chat Panel */}
       {selectedNode && (
         <div className="profile-panel">
           <button className="panel-close" onClick={handleClosePanel}>
             ×
           </button>
-          
-          <div className="panel-header">
+
+          {chatMode ? (
+            /* Chat View */
+            <div className="panel-chat">
+              <div className="panel-chat-header">
+                <button className="panel-back-btn" onClick={handleBackToProfile}>
+                  ← Back
+                </button>
+                <div className="panel-chat-user">
+                  <img
+                    src={getAvatarUrl(selectedNode.profilePicture, selectedNode.name, selectedNode.id)}
+                    alt={selectedNode.name}
+                    className="panel-chat-avatar"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const container = target.parentElement;
+                      if (container) {
+                        const fallback = document.createElement('div');
+                        fallback.className = 'panel-chat-avatar-fallback';
+                        fallback.textContent = selectedNode.name.charAt(0).toUpperCase();
+                        container.appendChild(fallback);
+                      }
+                    }}
+                  />
+                  <h3>{selectedNode.name}</h3>
+                </div>
+              </div>
+
+              <div className="panel-chat-messages">
+                {chatLoading ? (
+                  <div className="chat-loading-small">
+                    <div className="loading-spinner" />
+                  </div>
+                ) : messages.length === 0 ? (
+                  <div className="chat-empty-small">
+                    <p>Start the conversation!</p>
+                  </div>
+                ) : (
+                  messages.map((message) => {
+                    const isOwn = message.senderId === currentUserId;
+                    return (
+                      <div
+                        key={message.id}
+                        className={`panel-message ${isOwn ? 'panel-message-own' : 'panel-message-other'}`}
+                      >
+                        {!isOwn && (
+                          <img
+                            src={getAvatarUrl(selectedNode.profilePicture, selectedNode.name, selectedNode.id)}
+                            alt={selectedNode.name}
+                            className="panel-message-avatar"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                            }}
+                          />
+                        )}
+                        <div className="panel-message-content">
+                          <div className="panel-message-bubble">
+                            {message.content}
+                          </div>
+                          <div className="panel-message-time">
+                            {new Date(message.createdAt).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              <div className="panel-chat-input-container">
+                <textarea
+                  className="panel-chat-input"
+                  placeholder="Type a message..."
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  rows={1}
+                  disabled={sending}
+                />
+                <button
+                  className="panel-chat-send-btn"
+                  onClick={handleSendMessage}
+                  disabled={!messageInput.trim() || sending}
+                >
+                  {sending ? '...' : 'Send'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Profile View */
+            <div className="panel-profile-content">
+              <div className="panel-header">
             <div className="panel-avatar-container">
               <img
                 src={getAvatarUrl(selectedNode.profilePicture, selectedNode.name, selectedNode.id)}
@@ -345,6 +493,8 @@ export default function GraphPage() {
               Connect
             </button>
           </div>
+            </div>
+          )}
         </div>
       )}
 
