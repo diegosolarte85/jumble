@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "npm run db:push || true",
     "start": "next start",
     "lint": "next lint",
     "db:generate": "drizzle-kit generate",
@@ -17,31 +18,36 @@
     "test:watch": "tsx watch tests/api.test.ts"
   },
   "dependencies": {
+    "@types/pg": "^8.15.6",
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.0.0",
+    "drizzle-kit": "^0.24.0",
+    "drizzle-orm": "^0.33.0",
+    "nanoid": "^5.0.0",
     "next": "^14.2.0",
+    "next-auth": "^5.0.0-beta.25",
+    "postgres": "^3.4.7",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "react-force-graph-2d": "^1.25.0",
-    "next-auth": "^5.0.0-beta.25",
-    "drizzle-orm": "^0.33.0",
-    "drizzle-kit": "^0.24.0",
-    "better-sqlite3": "^11.0.0",
-    "bcryptjs": "^2.4.3",
-    "zod": "^3.23.0",
-    "nanoid": "^5.0.0"
+    "zod": "^3.23.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/better-sqlite3": "^7.6.11",
     "@types/node": "^20.14.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
-    "@types/bcryptjs": "^2.4.6",
-    "@types/better-sqlite3": "^7.6.11",
-    "typescript": "^5.5.0",
-    "tailwindcss": "^3.4.0",
-    "postcss": "^8.4.0",
     "autoprefixer": "^10.4.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.0",
-    "tsx": "^4.7.0"
+    "postcss": "^8.4.0",
+    "tailwindcss": "^3.4.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": "18.x",
+    "npm": "10.x"
   }
 }
-

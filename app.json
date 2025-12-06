@@ -1,0 +1,56 @@
+{
+  "name": "Jumble - Co-founder Matching",
+  "description": "A platform for connecting business ideas and creators together",
+  "repository": "https://github.com/yourusername/jumble",
+  "keywords": ["nextjs", "cofounder", "matching", "startup"],
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:essential-0"
+    }
+  ],
+  "env": {
+    "NEXTAUTH_SECRET": {
+      "description": "Secret key for NextAuth.js session encryption",
+      "generator": "secret"
+    },
+    "NEXTAUTH_URL": {
+      "description": "The canonical URL of your site (e.g., https://your-app.herokuapp.com)",
+      "required": true
+    },
+    "NODE_ENV": {
+      "description": "Node environment",
+      "value": "production"
+    },
+    "GOOGLE_CLIENT_ID": {
+      "description": "Google OAuth Client ID (optional)",
+      "required": false
+    },
+    "GOOGLE_CLIENT_SECRET": {
+      "description": "Google OAuth Client Secret (optional)",
+      "required": false
+    },
+    "GITHUB_CLIENT_ID": {
+      "description": "GitHub OAuth Client ID (optional)",
+      "required": false
+    },
+    "GITHUB_CLIENT_SECRET": {
+      "description": "GitHub OAuth Client Secret (optional)",
+      "required": false
+    },
+    "ML_SERVICE_URL": {
+      "description": "URL of the ML service (optional)",
+      "required": false
+    }
+  }
+}
