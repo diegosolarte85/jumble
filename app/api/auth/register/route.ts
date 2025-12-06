@@ -4,15 +4,36 @@ import { users } from '@/drizzle/schema';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
+import { sanitizeString, sanitizeEmail } from '@/lib/sanitize';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password, name } = body;
+    let { email, password, name } = body;
 
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Email and password are required' },
+        { status: 400 }
+      );
+    }
+
+    // Sanitize inputs
+    try {
+      email = sanitizeEmail(email);
+    } catch (error: any) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      );
+    }
+    
+    name = sanitizeString(name);
+    
+    // Validate password length
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: 'Password must be at least 6 characters' },
         { status: 400 }
       );
     }
@@ -42,7 +63,7 @@ export async function POST(request: NextRequest) {
     await db.insert(users).values(newUser);
 
     return NextResponse.json(
-      { id: userId, email, name },
+      { id: userId, email, name: name || null },
       { status: 201 }
     );
   } catch (error) {

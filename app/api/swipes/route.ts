@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { swipes, matches } from '@/drizzle/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or } from 'drizzle-orm';
 import { generateId } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
@@ -75,19 +75,41 @@ export async function POST(request: NextRequest) {
         .limit(1);
 
       if (mutualSwipe.length > 0 || direction === 'super') {
-        // Create match
-        const matchId = generateId();
-        await db.insert(matches).values({
-          id: matchId,
-          user1Id: session.user.id,
-          user2Id: swipedId,
-          matchScore: null, // Will be calculated by ML service
-        });
+        // Check if match already exists to prevent duplicates
+        const existingMatch = await db.select().from(matches)
+          .where(or(
+            and(
+              eq(matches.user1Id, session.user.id),
+              eq(matches.user2Id, swipedId)
+            ),
+            and(
+              eq(matches.user1Id, swipedId),
+              eq(matches.user2Id, session.user.id)
+            )
+          ))
+          .limit(1);
 
-        return NextResponse.json({
-          swipe: { id: swipeId, swipedId, direction },
-          match: { id: matchId, matched: true },
-        });
+        if (existingMatch.length === 0) {
+          // Create match only if it doesn't exist
+          const matchId = generateId();
+          await db.insert(matches).values({
+            id: matchId,
+            user1Id: session.user.id,
+            user2Id: swipedId,
+            matchScore: null, // Will be calculated by ML service
+          });
+
+          return NextResponse.json({
+            swipe: { id: swipeId, swipedId, direction },
+            match: { id: matchId, matched: true },
+          });
+        } else {
+          // Match already exists
+          return NextResponse.json({
+            swipe: { id: swipeId, swipedId, direction },
+            match: { id: existingMatch[0].id, matched: true },
+          });
+        }
       }
     }
 

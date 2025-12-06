@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, unique } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 export const users = sqliteTable('users', {
@@ -42,7 +42,7 @@ export const swipes = sqliteTable('swipes', {
   direction: text('direction', { enum: ['left', 'right', 'super'] }).notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 }, (table) => ({
-  uniqueSwipe: sql`unique (${table.swiperId}, ${table.swipedId})`,
+  uniqueSwipe: unique().on(table.swiperId, table.swipedId),
 }));
 
 export const matches = sqliteTable('matches', {
