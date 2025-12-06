@@ -25,12 +25,14 @@ export async function GET(
     // Get user startup ideas (public)
     const userIdeas = await db.select().from(startupIdeas).where(eq(startupIdeas.userId, userId));
 
+    const userData = user[0];
     return NextResponse.json({
-      id: user[0].id,
-      name: user[0].name,
-      bio: user[0].bio,
-      location: user[0].location,
-      commitmentLevel: user[0].commitmentLevel,
+      id: userData.id,
+      name: userData.name,
+      bio: userData.bio,
+      location: userData.location,
+      profilePicture: userData.profilePicture || null,
+      commitmentLevel: userData.commitmentLevel,
       skills: userSkills.map(skill => ({
         id: skill.id,
         skillName: skill.skillName,

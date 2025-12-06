@@ -97,6 +97,19 @@ body {
   width: 100%;
   height: 100%;
   position: relative;
+  overflow: hidden;
+}
+
+/* Node Avatar Overlays */
+.node-avatar-overlay {
+  pointer-events: none;
+  transition: transform 0.2s ease;
+}
+
+.node-avatar-overlay img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* Node Tooltip */
@@ -196,18 +209,29 @@ body {
   padding-top: 20px;
 }
 
-.panel-avatar {
+.panel-avatar-container {
   width: 80px;
   height: 80px;
   border-radius: var(--radius-full);
+  margin-bottom: 16px;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 32px;
   font-weight: 700;
   color: var(--bg-primary);
-  margin-bottom: 16px;
-  box-shadow: 0 0 40px currentColor;
+  background-color: var(--bg-elevated);
+  box-shadow: 0 0 40px rgba(0, 255, 255, 0.3);
+}
+
+.panel-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+  border: 3px solid;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
 }
 
 .panel-name {

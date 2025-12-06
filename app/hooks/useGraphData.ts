@@ -21,6 +21,7 @@ export interface UserRecommendation {
   name: string | null;
   bio: string | null;
   location: string | null;
+  profilePicture?: string | null;
   commitmentLevel: 'fulltime' | 'parttime' | 'weekends' | null;
   skills: Skill[];
   ideas: Idea[];
@@ -34,6 +35,7 @@ export interface GraphNode {
   skills: Skill[];
   ideas: Idea[];
   commitmentLevel: string | null;
+  profilePicture?: string | null;
   // Visual properties
   nodeSize: number;
   color: string;
@@ -70,6 +72,7 @@ interface CurrentUser {
   id: string;
   name: string | null;
   bio: string | null;
+  profilePicture?: string | null;
   commitmentLevel: string | null;
   skills: Skill[];
   ideas: Idea[];
@@ -130,11 +133,15 @@ export function useGraphData() {
           setLoading(false);
           return;
         }
-        throw new Error('Failed to fetch user profile');
+        const errorText = await meResponse.text().catch(() => 'Unknown error');
+        console.error('Failed to fetch user profile:', meResponse.status, errorText);
+        throw new Error(`Failed to fetch user profile: ${meResponse.status} ${errorText}`);
       }
 
       if (!recommendationsResponse.ok) {
-        throw new Error('Failed to fetch recommendations');
+        const errorText = await recommendationsResponse.text().catch(() => 'Unknown error');
+        console.error('Failed to fetch recommendations:', recommendationsResponse.status, errorText);
+        throw new Error(`Failed to fetch recommendations: ${recommendationsResponse.status} ${errorText}`);
       }
 
       const me: CurrentUser = await meResponse.json();
@@ -177,6 +184,7 @@ export function useGraphData() {
           skills: me.skills || [],
           ideas: me.ideas || [],
           commitmentLevel: me.commitmentLevel,
+          profilePicture: me.profilePicture,
           nodeSize: 18,
           color: CURRENT_USER_COLOR,
         },
@@ -193,6 +201,7 @@ export function useGraphData() {
             skills: user.skills,
             ideas: user.ideas,
             commitmentLevel: user.commitmentLevel,
+            profilePicture: user.profilePicture,
             // Size based on match score (8-14px range)
             nodeSize: 8 + matchScore * 6,
             color: getNodeColorByScore(matchScore),

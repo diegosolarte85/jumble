@@ -3,6 +3,7 @@
 import { useRef, useCallback, useEffect, useState } from 'react';
 import ForceGraph2D, { ForceGraphMethods } from 'react-force-graph-2d';
 import { GraphNode, GraphLink, GraphData } from '@/app/hooks/useGraphData';
+import { getAvatarUrl } from '@/lib/utils';
 
 interface GraphCanvasProps {
   data: GraphData;
@@ -14,6 +15,7 @@ export default function GraphCanvas({ data, onNodeClick, selectedNodeId }: Graph
   const graphRef = useRef<ForceGraphMethods>();
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  const [imageCache, setImageCache] = useState<Map<string, HTMLImageElement>>(new Map());
 
   // Handle window resize
   useEffect(() => {
@@ -47,6 +49,49 @@ export default function GraphCanvas({ data, onNodeClick, selectedNodeId }: Graph
     }
   }, [data.nodes]);
 
+  // Preload images
+  useEffect(() => {
+    const loadImages = async () => {
+      const newCache = new Map<string, HTMLImageElement>();
+      const urlsToLoad: string[] = [];
+      
+      // Collect unique URLs
+      for (const node of data.nodes) {
+        const avatarUrl = getAvatarUrl(node.profilePicture, node.name, node.id);
+        if (!imageCache.has(avatarUrl) && !urlsToLoad.includes(avatarUrl)) {
+          urlsToLoad.push(avatarUrl);
+        }
+      }
+      
+      // Load images
+      await Promise.all(
+        urlsToLoad.map((url) => {
+          return new Promise<void>((resolve) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+              newCache.set(url, img);
+              resolve();
+            };
+            img.onerror = () => {
+              // Image failed, skip it
+              resolve();
+            };
+            img.src = url;
+          });
+        })
+      );
+      
+      if (newCache.size > 0) {
+        setImageCache(prev => new Map([...prev, ...newCache]));
+      }
+    };
+    
+    if (data.nodes.length > 0) {
+      loadImages();
+    }
+  }, [data.nodes.length]); // Only re-run when node count changes
+
   // Custom node rendering
   const paintNode = useCallback(
     (node: GraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
@@ -67,17 +112,38 @@ export default function GraphCanvas({ data, onNodeClick, selectedNodeId }: Graph
         ctx.fill();
       }
 
-      // Draw node circle
-      ctx.beginPath();
-      ctx.arc(x, y, size, 0, 2 * Math.PI);
-      ctx.fillStyle = node.color;
-      ctx.fill();
-
-      // Draw border for selected/hovered nodes
-      if (isSelected || isHovered) {
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
+      // Try to draw profile picture
+      const avatarUrl = getAvatarUrl(node.profilePicture, node.name, node.id);
+      const cachedImg = imageCache.get(avatarUrl);
+      
+      if (cachedImg && cachedImg.complete) {
+        // Draw profile picture
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, 2 * Math.PI);
+        ctx.clip();
+        ctx.drawImage(cachedImg, x - size, y - size, size * 2, size * 2);
+        ctx.restore();
+        
+        // Draw border
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, 2 * Math.PI);
+        ctx.strokeStyle = node.color;
+        ctx.lineWidth = isSelected || isHovered ? 3 : 2;
         ctx.stroke();
+      } else {
+        // Fallback to colored circle
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, 2 * Math.PI);
+        ctx.fillStyle = node.color;
+        ctx.fill();
+
+        // Draw border for selected/hovered nodes
+        if (isSelected || isHovered) {
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
       }
 
       // Draw name label only for current user, hovered, or selected nodes
@@ -90,7 +156,7 @@ export default function GraphCanvas({ data, onNodeClick, selectedNodeId }: Graph
         ctx.fillText(node.name, x, y + size + 6);
       }
     },
-    [selectedNodeId, hoveredNode]
+    [selectedNodeId, hoveredNode, imageCache]
   );
 
   // Custom link rendering

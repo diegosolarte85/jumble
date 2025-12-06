@@ -30,8 +30,17 @@ export async function GET(request: NextRequest) {
     // Get user startup ideas
     const userIdeas = await db.select().from(startupIdeas).where(eq(startupIdeas.userId, session.user.id));
 
+    const userData = user[0];
     return NextResponse.json({
-      ...user[0],
+      id: userData.id,
+      email: userData.email,
+      name: userData.name,
+      bio: userData.bio,
+      location: userData.location,
+      profilePicture: userData.profilePicture || null,
+      commitmentLevel: userData.commitmentLevel,
+      createdAt: userData.createdAt,
+      updatedAt: userData.updatedAt,
       skills: userSkills,
       ideas: userIdeas,
     });
@@ -56,7 +65,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, bio, location, commitmentLevel } = body;
+    const { name, bio, location, profilePicture, commitmentLevel } = body;
 
     const updateData: any = {
       updatedAt: new Date(),
@@ -65,6 +74,7 @@ export async function PUT(request: NextRequest) {
     if (name !== undefined) updateData.name = name;
     if (bio !== undefined) updateData.bio = bio;
     if (location !== undefined) updateData.location = location;
+    if (profilePicture !== undefined) updateData.profilePicture = profilePicture;
     if (commitmentLevel !== undefined) updateData.commitmentLevel = commitmentLevel;
 
     await db.update(users)

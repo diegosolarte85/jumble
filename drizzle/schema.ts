@@ -8,6 +8,7 @@ export const users = sqliteTable('users', {
   name: text('name'),
   bio: text('bio'),
   location: text('location'),
+  profilePicture: text('profile_picture'), // URL to profile picture
   commitmentLevel: text('commitment_level', { enum: ['fulltime', 'parttime', 'weekends'] }),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),

@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
           name: user.name,
           bio: user.bio,
           location: user.location,
+          profilePicture: user.profilePicture || null,
           commitmentLevel: user.commitmentLevel,
           skills: userSkills.map(s => ({
             skillName: s.skillName,

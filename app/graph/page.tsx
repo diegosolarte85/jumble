@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useGraphData, GraphNode } from '@/app/hooks/useGraphData';
+import { getAvatarUrl } from '@/lib/utils';
 
 // Dynamic import to avoid SSR issues with canvas
 const GraphCanvas = dynamic(
@@ -109,11 +110,23 @@ export default function GraphPage() {
           </button>
           
           <div className="panel-header">
-            <div 
-              className="panel-avatar" 
-              style={{ backgroundColor: selectedNode.color }}
-            >
-              {selectedNode.name.charAt(0).toUpperCase()}
+            <div className="panel-avatar-container">
+              <img
+                src={getAvatarUrl(selectedNode.profilePicture, selectedNode.name, selectedNode.id)}
+                alt={selectedNode.name}
+                className="panel-avatar-img"
+                style={{ borderColor: selectedNode.color }}
+                onError={(e) => {
+                  // Fallback to initial if image fails
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const container = target.parentElement;
+                  if (container) {
+                    container.innerHTML = selectedNode.name.charAt(0).toUpperCase();
+                    container.style.backgroundColor = selectedNode.color;
+                  }
+                }}
+              />
             </div>
             <h2 className="panel-name">{selectedNode.name}</h2>
             {selectedNode.commitmentLevel && (
